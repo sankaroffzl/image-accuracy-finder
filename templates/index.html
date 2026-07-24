@@ -16,69 +16,66 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen">
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
 
-    <div class="container">
-        <header class="header">
-            <h1>Image Accuracy Finder</h1>
-            <p>Upload two images to find how accurately they match</p>
+    <div class="max-w-5xl mx-auto px-4 py-10">
+        <header class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8 text-center">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Image Accuracy Finder</h1>
+            <p class="mt-2 text-slate-500">Upload and compare images with AI-powered analysis</p>
         </header>
 
         {% if error %}
-        <div class="error-banner fade-in">{{ error }}</div>
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{{ error }}</div>
         {% endif %}
 
-        <div class="upload-section">
-          <div class="dropzone-row">
-            <!-- Reference dropzone -->
-            <div class="dropzone-wrapper">
-              <h3>Reference Image</h3>
-              <p class="dropzone-hint">The image to match against</p>
-              <div class="upload-zone dropzone" id="ref-dropzone">
-                <div class="dropzone-content">
-                  <span class="dropzone-icon">📷</span>
-                  <p>Drag & drop reference image here</p>
-                  <p class="small">or click to browse</p>
-                  <input type="file" id="ref-input" accept="image/*" hidden>
+        <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-slate-900 mb-1">Reference Image</h3>
+                <p class="text-sm text-slate-400 mb-3">The image to match against</p>
+                <div class="dropzone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer transition-all hover:border-blue-400 min-h-[280px] flex flex-col items-center justify-center bg-white" id="ref-dropzone">
+                    <div class="dropzone-content">
+                        <span class="text-4xl">📷</span>
+                        <p class="mt-2 text-slate-500">Drag & drop reference image here</p>
+                        <p class="text-sm text-slate-400">or click to browse</p>
+                        <input type="file" id="ref-input" accept="image/*" hidden>
+                    </div>
+                    <div id="ref-preview" hidden class="relative mt-4">
+                        <img id="ref-img" alt="Reference preview" class="max-h-64 mx-auto rounded-lg shadow-sm">
+                        <button class="absolute -top-3 -right-3 bg-red-500 text-white w-7 h-7 rounded-full hover:bg-red-600 flex items-center justify-center shadow-sm text-sm" id="ref-remove">✕</button>
+                    </div>
                 </div>
-                <div class="preview" id="ref-preview" hidden>
-                  <img id="ref-img" alt="Reference preview">
-                  <button class="remove-btn" id="ref-remove">✕</button>
-                </div>
-              </div>
             </div>
-            
-            <!-- Candidates dropzone -->
-            <div class="dropzone-wrapper">
-              <h3>Candidate Images</h3>
-              <p class="dropzone-hint">Images to compare against reference</p>
-              <div class="upload-zone dropzone" id="cand-dropzone">
-                <div class="dropzone-content">
-                  <span class="dropzone-icon">📁</span>
-                  <p>Drag & drop candidate images here</p>
-                  <p class="small">or click to browse (select multiple)</p>
-                  <input type="file" id="cand-input" accept="image/*" multiple hidden>
+
+            <div class="flex-1">
+                <h3 class="text-lg font-semibold text-slate-900 mb-1">Candidate Images</h3>
+                <p class="text-sm text-slate-400 mb-3">Images to compare against reference</p>
+                <div class="dropzone border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer transition-all hover:border-blue-400 min-h-[280px] flex flex-col items-center justify-center bg-white" id="cand-dropzone">
+                    <div class="dropzone-content">
+                        <span class="text-4xl">📁</span>
+                        <p class="mt-2 text-slate-500">Drag & drop candidate images here</p>
+                        <p class="text-sm text-slate-400">or click to browse (select multiple)</p>
+                        <input type="file" id="cand-input" accept="image/*" multiple hidden>
+                    </div>
+                    <div id="cand-list" hidden class="mt-4">
+                        <p class="text-sm text-slate-600 font-medium"><span id="cand-count">0</span> images selected</p>
+                        <button class="text-sm text-blue-600 hover:text-blue-800 underline mt-1" id="cand-clear">Clear all</button>
+                    </div>
                 </div>
-                <div class="file-list" id="cand-list" hidden>
-                  <p class="file-count"><span id="cand-count">0</span> images selected</p>
-                  <button class="remove-btn" id="cand-clear">Clear all</button>
-                </div>
-              </div>
             </div>
-          </div>
-          
-          <button class="compare-btn" id="batch-compare-btn" disabled>
+        </div>
+
+        <button class="w-full py-4 px-8 text-lg font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm" id="batch-compare-btn" disabled>
             🚀 Compare All
-          </button>
-          <div id="loading" hidden>
+        </button>
+
+        <div id="loading" hidden class="flex flex-col items-center py-8">
             <div class="spinner"></div>
-            <p id="loading-text">Comparing images...</p>
-          </div>
+            <p class="mt-4 text-slate-500" id="loading-text">Comparing images...</p>
         </div>
     </div>
 
-    <footer class="footer">
+    <footer class="text-center py-8 text-slate-400 text-sm border-t border-slate-200 mt-8 max-w-5xl mx-auto px-4">
         Made with ❤️ using Flask + OpenCV
     </footer>
 
