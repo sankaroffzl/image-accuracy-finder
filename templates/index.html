@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Accuracy Finder</title>
+</head>
+<body>
+<h1>Image Accuracy Finder</h1>
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+<form action="/compare" method="post" enctype="multipart/form-data">
+<label>Image A: <input type="file" name="image_a" required></label>
+<label>Image B: <input type="file" name="image_b" required></label>
+<button type="submit">Compare</button>
+</form>
+</body>
+</html>

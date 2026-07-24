@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Comparison Results</title>
+</head>
+<body>
+<h1>Comparison Results</h1>
+<p>Overall Score: {{ result.overall }}</p>
+<p>Verdict: {{ result.verdict }}</p>
+<h2>Details</h2>
+<ul>
+<li>SSIM: {{ result.details.ssim }}</li>
+<li>ORB: {{ result.details.orb }}</li>
+<li>Histogram: {{ result.details.histogram }}</li>
+<li>pHash: {{ result.details.phash }}</li>
+</ul>
+<a href="/">Compare another pair</a>
+</body>
+</html>
