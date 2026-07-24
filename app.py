@@ -127,6 +127,12 @@ def compare():
             pass
 
 
+@app.route("/batch-results")
+def batch_results():
+    """Render batch results page."""
+    return render_template("batch_results.html")
+
+
 @app.route("/results/<result_id>")
 def results(result_id):
     """Render the results page for a given comparison ID."""

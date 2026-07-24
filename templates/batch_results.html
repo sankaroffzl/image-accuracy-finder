@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Results - Image Accuracy Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Batch Results</h1>
+      <div class="header-actions">
+        <a href="/" class="btn">⬅ Back</a>
+        <button id="theme-toggle">🌓</button>
+      </div>
+    </header>
+    
+    <div id="results-summary" hidden>
+      <p>Sorted by similarity — <span id="result-count"></span> images compared</p>
+    </div>
+    
+    <div id="loading-results" class="loading-results">
+      <div class="spinner"></div>
+      <p>Loading results...</p>
+    </div>
+    
+    <div id="no-results" hidden>
+      <p>No results found. <a href="/">Upload images</a> to compare.</p>
+    </div>
+    
+    <div id="results-content" hidden>
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Image</th>
+            <th>Filename</th>
+            <th>Similarity</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+  
+  <script>
+    const PER_PAGE = 20;
+    let results = [];
+    let currentPage = 1;
+    
+    function getScoreColor(score) {
+      if (score >= 80) return '#22c55e';
+      if (score >= 60) return '#eab308';
+      if (score >= 40) return '#f97316';
+      return '#ef4444';
+    }
+    
+    function renderPage(page) {
+      currentPage = page;
+      const tbody = document.getElementById('results-body');
+      tbody.innerHTML = '';
+      const start = (page - 1) * PER_PAGE;
+      const end = Math.min(start + PER_PAGE, results.length);
+      
+      for (let i = start; i < end; i++) {
+        const r = results[i];
+        const rank = i + 1;
+        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        const color = getScoreColor(r.overall);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+          <td><div class="thumbnail" style="background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:20px;">🖼</div></td>
+          <td>${r.filename}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="score-bar">
+                <div class="score-fill" style="width:${r.overall}%;background:${color};"></div>
+              </div>
+              <strong>${r.overall.toFixed(1)}%</strong>
+            </div>
+          </td>
+          <td><button onclick="toggleBreakdown(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 8px;cursor:pointer;">Details</button></td>
+        `;
+        row.dataset.index = i;
+        tbody.appendChild(row);
+        
+        // Breakdown row
+        const br = document.createElement('tr');
+        br.className = 'breakdown';
+        br.id = `breakdown-${i}`;
+        br.innerHTML = `
+          <td colspan="5">
+            <div class="breakdown-grid">
+              <div class="breakdown-item">
+                <div class="label">SSIM</div>
+                <div class="value" style="color:${getScoreColor(r.ssim)}">${r.ssim.toFixed(1)}%</div>
+              </div>
+              <div class="breakdown-item">
+                <div class="label">ORB</div>
+                <div class="value" style="color:${getScoreColor(r.orb)}">${r.orb.toFixed(1)}%</div>
+              </div>
+              <div class="breakdown-item">
+                <div class="label">Histogram</div>
+                <div class="value" style="color:${getScoreColor(r.histogram)}">${r.histogram.toFixed(1)}%</div>
+              </div>
+              <div class="breakdown-item">
+                <div class="label">pHash</div>
+                <div class="value" style="color:${getScoreColor(r.phash)}">${r.phash.toFixed(1)}%</div>
+              </div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(br);
+      }
+      
+      renderPagination();
+    }
+    
+    function renderPagination() {
+      const pages = Math.ceil(results.length / PER_PAGE);
+      const container = document.getElementById('pagination');
+      container.innerHTML = '';
+      
+      const prev = document.createElement('button');
+      prev.textContent = '◀';
+      prev.disabled = currentPage === 1;
+      prev.onclick = () => renderPage(currentPage - 1);
+      container.appendChild(prev);
+      
+      for (let i = 1; i <= pages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = i === currentPage ? 'active' : '';
+        btn.onclick = () => renderPage(i);
+        container.appendChild(btn);
+      }
+      
+      const next = document.createElement('button');
+      next.textContent = '▶';
+      next.disabled = currentPage === pages;
+      next.onclick = () => renderPage(currentPage + 1);
+      container.appendChild(next);
+    }
+    
+    function toggleBreakdown(index) {
+      const el = document.getElementById(`breakdown-${index}`);
+      el.classList.toggle('visible');
+    }
+    
+    // Load results
+    document.addEventListener('DOMContentLoaded', () => {
+      const stored = sessionStorage.getItem('batchResults');
+      if (stored) {
+        results = JSON.parse(stored);
+        document.getElementById('result-count').textContent = results.length;
+        document.getElementById('results-summary').hidden = false;
+        document.getElementById('loading-results').hidden = true;
+        document.getElementById('results-content').hidden = false;
+        renderPage(1);
+      } else {
+        document.getElementById('loading-results').hidden = true;
+        document.getElementById('no-results').hidden = false;
+      }
+    });
+    
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-theme');
+      document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌓';
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+      document.getElementById('theme-toggle').textContent = '☀️';
+    }
+  </script>
+</body>
+</html>

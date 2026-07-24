@@ -126,3 +126,10 @@ class TestBatchCompare:
         }
         resp = client.post('/compare-batch', data=data, content_type='multipart/form-data')
         assert resp.status_code == 400
+
+
+def test_batch_results_page(client):
+    """Test batch results page loads."""
+    resp = client.get('/batch-results')
+    assert resp.status_code == 200
+    assert b'Batch Results' in resp.data or b'Rank' in resp.data
