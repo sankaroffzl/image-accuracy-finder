@@ -107,7 +107,7 @@ def compare_images(image_a_path: str, image_b_path: str) -> dict:
             },
         }
 
-    except (FileNotFoundError, ValueError, Exception) as e:
+    except Exception as e:
         return {
             "success": False,
             "error": str(e),

@@ -2,7 +2,6 @@
 
 import os
 import uuid
-import json
 from flask import Flask, render_template, request, jsonify, abort
 from engine.orchestrator import compare_images
 
@@ -22,8 +21,9 @@ def _allowed_file(filename: str) -> bool:
     )
 
 
-def _get_ext(filename: str) -> str:
-    return filename.rsplit(".", 1)[1].lower()
+def _get_ext(filename: str) -> str | None:
+    parts = filename.rsplit(".", 1)
+    return parts[1].lower() if len(parts) == 2 else None
 
 
 @app.route("/")
