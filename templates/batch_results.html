@@ -74,7 +74,7 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><span class="rank-badge ${rankClass}">${rank}</span></td>
-          <td><div class="thumbnail" style="background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:20px;">🖼</div></td>
+          <td>${r.thumbnail ? `<img src="${r.thumbnail}" alt="${r.filename}" class="thumbnail">` : `<div class="thumbnail" style="background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:20px;">🖼</div>`}</td>
           <td>${r.filename}</td>
           <td>
             <div style="display:flex;align-items:center;gap:12px;">

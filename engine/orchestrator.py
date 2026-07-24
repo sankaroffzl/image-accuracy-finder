@@ -129,6 +129,7 @@ def batch_compare(ref_path: str, candidate_paths: list[str]) -> list[dict]:
     for path in candidate_paths:
         result = compare_images(ref_path, path)
         result["filename"] = os.path.basename(path)
+        result["_path"] = path
         results.append(result)
 
     results.sort(key=lambda r: r["overall"], reverse=True)

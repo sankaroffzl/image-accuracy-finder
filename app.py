@@ -2,6 +2,8 @@
 
 import os
 import uuid
+import base64
+import cv2
 from flask import Flask, render_template, request, jsonify, abort
 from engine.orchestrator import compare_images, batch_compare
 
@@ -67,6 +69,24 @@ def compare_batch():
             candidate_paths.append(path)
 
         results = batch_compare(ref_path, candidate_paths)
+
+        # Generate base64 thumbnails for each candidate
+        for result in results:
+            path = result.pop("_path", None)
+            if path:
+                try:
+                    img = cv2.imread(path)
+                    if img is not None:
+                        thumb = cv2.resize(img, (48, 48))
+                        _, buf = cv2.imencode(".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, 60])
+                        b64 = base64.b64encode(buf).decode("utf-8")
+                        result["thumbnail"] = f"data:image/jpeg;base64,{b64}"
+                    else:
+                        result["thumbnail"] = None
+                except Exception:
+                    result["thumbnail"] = None
+            else:
+                result["thumbnail"] = None
 
         return jsonify(success=True, count=len(results), results=results)
 
