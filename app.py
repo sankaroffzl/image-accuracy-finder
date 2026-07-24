@@ -7,7 +7,7 @@ from engine.orchestrator import compare_images, batch_compare
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "uploads")
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500MB
 app.config["ALLOWED_EXTENSIONS"] = {"png", "jpg", "jpeg", "webp"}
 
 # In-memory result store (could use a DB for production)

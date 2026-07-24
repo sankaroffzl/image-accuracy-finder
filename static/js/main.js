@@ -24,7 +24,7 @@ refDropzone.addEventListener('drop', (e) => {
 });
 
 const VALID_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-const MAX_SIZE = 16 * 1024 * 1024; // 16MB
+const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
 function validateFile(file) {
   if (!VALID_TYPES.includes(file.type)) {
