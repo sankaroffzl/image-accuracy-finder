@@ -1,20 +1,139 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<title>Comparison Results</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accuracy Results | Image Finder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 </head>
 <body>
-<h1>Comparison Results</h1>
-<p>Overall Score: {{ result.overall }}</p>
-<p>Verdict: {{ result.verdict }}</p>
-<h2>Details</h2>
-<ul>
-<li>SSIM: {{ result.details.ssim }}</li>
-<li>ORB: {{ result.details.orb }}</li>
-<li>Histogram: {{ result.details.histogram }}</li>
-<li>pHash: {{ result.details.phash }}</li>
-</ul>
-<a href="/">Compare another pair</a>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
+
+    <div class="container">
+        <div class="results-header fade-in">
+            <a href="/" class="back-link">← Compare New Images</a>
+            <h1>Accuracy Results</h1>
+        </div>
+
+        <!-- Gauge -->
+        <div class="gauge-container fade-in">
+            <div class="gauge" id="gauge">
+                <svg viewBox="0 0 120 120">
+                    <circle class="gauge-bg" cx="60" cy="60" r="50"/>
+                    <circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="50"
+                            stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+                </svg>
+                <div class="gauge-text">
+                    <span class="gauge-percentage" id="gaugePercent">0%</span>
+                    <span class="gauge-label">Accuracy</span>
+                </div>
+            </div>
+            <div class="gauge-verdict verdict-{{ 'high' if result.overall >= 75 else 'moderate' if result.overall >= 50 else 'low' }}" id="verdict">
+                {{ 'High Match' if result.overall >= 75 else 'Moderate Match' if result.overall >= 50 else 'Low Match' }}
+            </div>
+        </div>
+
+        <!-- Details Breakdown -->
+        <div class="details-section fade-in">
+            <h2>Algorithm Breakdown</h2>
+            <table class="details-table">
+                <tr>
+                    <td class="metric-name">SSIM</td>
+                    <td class="metric-bar">
+                        <div class="bar-track">
+                            <div class="bar-fill {{ 'high' if result.details.ssim >= 0.75 else 'moderate' if result.details.ssim >= 0.50 else 'low' }}"
+                                 data-value="{{ result.details.ssim }}"></div>
+                        </div>
+                    </td>
+                    <td class="metric-value" id="ssimVal">{{ "%.1f"|format(result.details.ssim * 100) }}%</td>
+                </tr>
+                <tr>
+                    <td class="metric-name">Feature Match</td>
+                    <td class="metric-bar">
+                        <div class="bar-track">
+                            <div class="bar-fill {{ 'high' if result.details.orb >= 0.75 else 'moderate' if result.details.orb >= 0.50 else 'low' }}"
+                                 data-value="{{ result.details.orb }}"></div>
+                        </div>
+                    </td>
+                    <td class="metric-value" id="orbVal">{{ "%.1f"|format(result.details.orb * 100) }}%</td>
+                </tr>
+                <tr>
+                    <td class="metric-name">Histogram</td>
+                    <td class="metric-bar">
+                        <div class="bar-track">
+                            <div class="bar-fill {{ 'high' if result.details.histogram >= 0.75 else 'moderate' if result.details.histogram >= 0.50 else 'low' }}"
+                                 data-value="{{ result.details.histogram }}"></div>
+                        </div>
+                    </td>
+                    <td class="metric-value" id="histVal">{{ "%.1f"|format(result.details.histogram * 100) }}%</td>
+                </tr>
+                <tr>
+                    <td class="metric-name">pHash</td>
+                    <td class="metric-bar">
+                        <div class="bar-track">
+                            <div class="bar-fill {{ 'high' if result.details.phash >= 0.75 else 'moderate' if result.details.phash >= 0.50 else 'low' }}"
+                                 data-value="{{ result.details.phash }}"></div>
+                        </div>
+                    </td>
+                    <td class="metric-value" id="phashVal">{{ "%.1f"|format(result.details.phash * 100) }}%</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">
+        Made with ❤️ using Flask + OpenCV
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const overall = {{ result.overall }};
+            const totalDash = 314.16;
+            const offset = totalDash - (overall / 100) * totalDash;
+
+            let color;
+            if (overall >= 75) color = '#22c55e';
+            else if (overall >= 50) color = '#eab308';
+            else color = '#ef4444';
+
+            const gaugeFill = document.getElementById('gaugeFill');
+            const gaugePercent = document.getElementById('gaugePercent');
+
+            setTimeout(() => {
+                gaugeFill.style.stroke = color;
+                gaugeFill.style.strokeDashoffset = offset;
+
+                let current = 0;
+                const target = overall;
+                const step = target / 60;
+                const interval = setInterval(() => {
+                    current += step;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(interval);
+                    }
+                    gaugePercent.textContent = Math.round(current) + '%';
+                }, 16);
+            }, 300);
+
+            document.querySelectorAll('.bar-fill').forEach(bar => {
+                const val = parseFloat(bar.dataset.value);
+                setTimeout(() => {
+                    bar.style.width = (val * 100) + '%';
+                }, 600);
+            });
+
+            const toggleBtn = document.getElementById('themeToggle');
+            let isDark = true;
+            toggleBtn.addEventListener('click', () => {
+                isDark = !isDark;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                document.body.classList.toggle('light-theme', !isDark);
+                toggleBtn.textContent = isDark ? '🌙' : '☀️';
+            });
+        });
+    </script>
 </body>
 </html>
