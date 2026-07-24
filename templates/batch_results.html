@@ -17,7 +17,11 @@
     </div>
     
     <div id="results-summary" hidden>
-      <p>Sorted by similarity — <span id="result-count"></span> images compared</p>
+      <p>🏆 <span id="result-count"></span> participants ranked by accuracy</p>
+      <div class="action-bar">
+        <button class="action-btn" onclick="exportCSV()">📥 Export CSV</button>
+        <button class="action-btn secondary" onclick="newRound()">🔄 New Round</button>
+      </div>
     </div>
     
     <div id="loading-results" class="loading-results">
@@ -68,14 +72,16 @@
       for (let i = start; i < end; i++) {
         const r = results[i];
         const rank = i + 1;
-        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        const rankClass = rank <= 3 ? `rank-${rank}` : (rank <= 10 ? 'rank-4' : '');
+        const isTop10 = rank <= 10;
         const color = getScoreColor(r.overall);
         
         const row = document.createElement('tr');
+        if (isTop10) row.className = 'row-top-10';
         row.innerHTML = `
-          <td><span class="rank-badge ${rankClass}">${rank}</span></td>
+          <td><span class="rank-badge ${rankClass}">${rank}</span>
           <td>${r.thumbnail ? `<img src="${r.thumbnail}" alt="${r.filename}" class="thumbnail">` : `<div class="thumbnail" style="background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:20px;">🖼</div>`}</td>
-          <td>${r.filename}</td>
+          <td>${r.filename}${isTop10 ? '<span class="top10-label">TOP 10</span>' : ''}</td>
           <td>
             <div style="display:flex;align-items:center;gap:12px;">
               <div class="score-bar">
@@ -145,6 +151,27 @@
       next.disabled = currentPage === pages;
       next.onclick = () => renderPage(currentPage + 1);
       container.appendChild(next);
+    }
+    
+    function exportCSV() {
+      let csv = 'Rank,Filename,Overall,SSIM,ORB,Histogram,pHash\n';
+      results.forEach((r, i) => {
+        csv += `${i + 1},${r.filename},${r.overall.toFixed(1)}%,${r.ssim.toFixed(1)}%,${r.orb.toFixed(1)}%,${r.histogram.toFixed(1)}%,${r.phash.toFixed(1)}%\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'accuracy-results.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    function newRound() {
+      if (confirm('Start a new round? This will clear the current results.')) {
+        sessionStorage.removeItem('batchResults');
+        window.location.href = '/';
+      }
     }
     
     function toggleBreakdown(index) {
