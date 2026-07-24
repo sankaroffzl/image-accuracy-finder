@@ -79,15 +79,15 @@
         const row = document.createElement('tr');
         if (isTop10) row.className = 'row-top-10';
         row.innerHTML = `
-          <td><span class="rank-badge ${rankClass}">${rank}</span>
+          <td><span class="rank-badge ${rankClass}">${rank}</span></td>
           <td>${r.thumbnail ? `<img src="${r.thumbnail}" alt="${r.filename}" class="thumbnail">` : `<div class="thumbnail" style="background:#eee;display:flex;align-items:center;justify-content:center;color:#999;font-size:20px;">🖼</div>`}</td>
           <td>${r.filename}${isTop10 ? '<span class="top10-label">TOP 10</span>' : ''}</td>
           <td>
             <div style="display:flex;align-items:center;gap:12px;">
               <div class="score-bar">
-                <div class="score-fill" style="width:${r.overall}%;background:${color};"></div>
+                <div class="score-fill" style="width:${r.overall || 0}%;background:${color};"></div>
               </div>
-              <strong>${r.overall.toFixed(1)}%</strong>
+              <strong>${(r.overall || 0).toFixed(1)}%</strong>
             </div>
           </td>
           <td><button class="details-btn" onclick="toggleBreakdown(${i})">Details</button></td>
@@ -99,24 +99,28 @@
         const br = document.createElement('tr');
         br.className = 'breakdown';
         br.id = `breakdown-${i}`;
+        const ssim = r.ssim || 0;
+        const orb = r.orb || 0;
+        const hist = r.histogram || 0;
+        const phash = r.phash || 0;
         br.innerHTML = `
           <td colspan="5">
             <div class="breakdown-grid">
               <div class="breakdown-item">
                 <div class="label">SSIM</div>
-                <div class="value" style="color:${getScoreColor(r.ssim)}">${r.ssim.toFixed(1)}%</div>
+                <div class="value" style="color:${getScoreColor(ssim)}">${ssim.toFixed(1)}%</div>
               </div>
               <div class="breakdown-item">
                 <div class="label">ORB</div>
-                <div class="value" style="color:${getScoreColor(r.orb)}">${r.orb.toFixed(1)}%</div>
+                <div class="value" style="color:${getScoreColor(orb)}">${orb.toFixed(1)}%</div>
               </div>
               <div class="breakdown-item">
                 <div class="label">Histogram</div>
-                <div class="value" style="color:${getScoreColor(r.histogram)}">${r.histogram.toFixed(1)}%</div>
+                <div class="value" style="color:${getScoreColor(hist)}">${hist.toFixed(1)}%</div>
               </div>
               <div class="breakdown-item">
                 <div class="label">pHash</div>
-                <div class="value" style="color:${getScoreColor(r.phash)}">${r.phash.toFixed(1)}%</div>
+                <div class="value" style="color:${getScoreColor(phash)}">${phash.toFixed(1)}%</div>
               </div>
             </div>
           </td>
@@ -156,7 +160,11 @@
     function exportCSV() {
       let csv = 'Rank,Filename,Overall,SSIM,ORB,Histogram,pHash\n';
       results.forEach((r, i) => {
-        csv += `${i + 1},${r.filename},${r.overall.toFixed(1)}%,${r.ssim.toFixed(1)}%,${r.orb.toFixed(1)}%,${r.histogram.toFixed(1)}%,${r.phash.toFixed(1)}%\n`;
+        const ssim = r.ssim || 0;
+        const orb = r.orb || 0;
+        const hist = r.histogram || 0;
+        const phash = r.phash || 0;
+        csv += `${i + 1},${r.filename},${(r.overall || 0).toFixed(1)}%,${ssim.toFixed(1)}%,${orb.toFixed(1)}%,${hist.toFixed(1)}%,${phash.toFixed(1)}%\n`;
       });
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);

@@ -92,6 +92,14 @@ def compare_batch():
         batch_result = batch_compare(ref_path, candidate_paths)
         results = batch_result["results"]
 
+        # Flatten algorithm scores from details.* to top level for frontend
+        for result in results:
+            if result.get("details"):
+                result["ssim"] = round(result["details"]["ssim"] * 100, 1)
+                result["orb"] = round(result["details"]["orb"] * 100, 1)
+                result["histogram"] = round(result["details"]["histogram"] * 100, 1)
+                result["phash"] = round(result["details"]["phash"] * 100, 1)
+
         # Replace UUID filenames with original names
         for result in results:
             path = result.get("_path")
