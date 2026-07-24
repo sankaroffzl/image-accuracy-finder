@@ -1,9 +1,14 @@
 import numpy as np
 import tempfile
 import os
+import cv2
 from PIL import Image
 import pytest
-from engine.orchestrator import compare_images
+from engine.orchestrator import compare_images, batch_compare
+
+
+def _create_test_array(gray_value=128, size=(100, 100)):
+    return np.full((*size, 3), gray_value, dtype=np.uint8)
 
 
 def _create_test_image(path, color=None):
@@ -63,3 +68,39 @@ def test_nonexistent_file_returns_error():
     result = compare_images("/nonexistent/a.png", "/nonexistent/b.png")
     assert result["success"] is False
     assert "error" in result
+
+
+def test_batch_compare_returns_sorted_results():
+    with tempfile.TemporaryDirectory() as tmp:
+        ref_path = os.path.join(tmp, "ref.png")
+        cv2.imwrite(ref_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
+        candidate_paths = []
+        for val in [200, 100, 200]:
+            p = os.path.join(tmp, f"c{val}.png")
+            cv2.imwrite(p, cv2.cvtColor(_create_test_array(val), cv2.COLOR_RGB2BGR))
+            candidate_paths.append(p)
+        results = batch_compare(ref_path, candidate_paths)
+        assert len(results) == 3
+        for i in range(len(results) - 1):
+            assert results[i]["overall"] >= results[i + 1]["overall"]
+
+
+def test_batch_compare_single_candidate():
+    with tempfile.TemporaryDirectory() as tmp:
+        ref_path = os.path.join(tmp, "ref.png")
+        cv2.imwrite(ref_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
+        cand_path = os.path.join(tmp, "cand.png")
+        cv2.imwrite(cand_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
+        results = batch_compare(ref_path, [cand_path])
+        assert len(results) == 1
+        assert "filename" in results[0]
+
+
+def test_batch_compare_adds_filename():
+    with tempfile.TemporaryDirectory() as tmp:
+        ref_path = os.path.join(tmp, "ref.jpg")
+        cv2.imwrite(ref_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
+        cand_path = os.path.join(tmp, "candidate.jpg")
+        cv2.imwrite(cand_path, cv2.cvtColor(_create_test_array(100), cv2.COLOR_RGB2BGR))
+        results = batch_compare(ref_path, [cand_path])
+        assert results[0]["filename"] == "candidate.jpg"
