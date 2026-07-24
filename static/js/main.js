@@ -23,16 +23,16 @@ refDropzone.addEventListener('drop', (e) => {
   if (e.dataTransfer.files[0]) handleRefFile(e.dataTransfer.files[0]);
 });
 
-const VALID_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const MAX_SIZE = 500 * 1024 * 1024; // 500MB
 
 function validateFile(file) {
-  if (!VALID_TYPES.includes(file.type)) {
-    alert('Please upload a PNG, JPG, or WEBP image.');
+  // Accept any file type that starts with 'image/' or has no type (unknown but let server decide)
+  if (file.type && !file.type.startsWith('image/')) {
+    alert(`"${file.name}" is not a supported image type (${file.type}). Please use PNG, JPG, or WEBP.`);
     return false;
   }
   if (file.size > MAX_SIZE) {
-    alert('File is too large. Maximum is 16MB.');
+    alert(`"${file.name}" is too large (max 500MB).`);
     return false;
   }
   return true;
