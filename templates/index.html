@@ -10,11 +10,6 @@
 <body>
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
 
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-        <p>Analyzing images...</p>
-    </div>
-
     <div class="container">
         <header class="header">
             <h1>Image Accuracy Finder</h1>
@@ -31,7 +26,7 @@
             <div class="dropzone-wrapper">
               <h3>Reference Image</h3>
               <p class="dropzone-hint">The image to match against</p>
-              <div class="dropzone" id="ref-dropzone">
+              <div class="upload-zone dropzone" id="ref-dropzone">
                 <div class="dropzone-content">
                   <span class="dropzone-icon">📷</span>
                   <p>Drag & drop reference image here</p>
@@ -49,7 +44,7 @@
             <div class="dropzone-wrapper">
               <h3>Candidate Images</h3>
               <p class="dropzone-hint">Images to compare against reference</p>
-              <div class="dropzone" id="cand-dropzone">
+              <div class="upload-zone dropzone" id="cand-dropzone">
                 <div class="dropzone-content">
                   <span class="dropzone-icon">📁</span>
                   <p>Drag & drop candidate images here</p>

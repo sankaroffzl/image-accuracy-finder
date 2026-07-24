@@ -23,13 +23,30 @@ refDropzone.addEventListener('drop', (e) => {
   if (e.dataTransfer.files[0]) handleRefFile(e.dataTransfer.files[0]);
 });
 
+const VALID_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const MAX_SIZE = 16 * 1024 * 1024; // 16MB
+
+function validateFile(file) {
+  if (!VALID_TYPES.includes(file.type)) {
+    alert('Please upload a PNG, JPG, or WEBP image.');
+    return false;
+  }
+  if (file.size > MAX_SIZE) {
+    alert('File is too large. Maximum is 16MB.');
+    return false;
+  }
+  return true;
+}
+
 function handleRefFile(file) {
+  if (!validateFile(file)) return;
   refFile = file;
   const reader = new FileReader();
   reader.onload = (e) => {
     refImg.src = e.target.result;
     refPreview.hidden = false;
     refDropzone.querySelector('.dropzone-content').hidden = true;
+    refDropzone.classList.add('has-image');
   };
   reader.readAsDataURL(file);
   updateCompareBtn();
@@ -40,6 +57,7 @@ refRemove.addEventListener('click', (e) => {
   refFile = null;
   refPreview.hidden = true;
   refDropzone.querySelector('.dropzone-content').hidden = false;
+  refDropzone.classList.remove('has-image');
   refInput.value = '';
   updateCompareBtn();
 });
@@ -65,9 +83,11 @@ candDropzone.addEventListener('drop', (e) => {
 });
 
 function handleCandFiles(files) {
-  candFiles = [...candFiles, ...Array.from(files)];
+  const valid = Array.from(files).filter(f => validateFile(f));
+  candFiles = [...candFiles, ...valid];
   candCount.textContent = candFiles.length;
-  candList.hidden = false;
+  candList.hidden = candFiles.length === 0;
+  if (candFiles.length > 0) candDropzone.classList.add('has-image');
   updateCompareBtn();
 }
 
@@ -76,6 +96,7 @@ candClear.addEventListener('click', (e) => {
   candFiles = [];
   candCount.textContent = '0';
   candList.hidden = true;
+  candDropzone.classList.remove('has-image');
   candInput.value = '';
   updateCompareBtn();
 });
@@ -113,11 +134,13 @@ document.getElementById('batch-compare-btn').addEventListener('click', async () 
 
 // Theme toggle
 document.getElementById('themeToggle')?.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  const isLight = document.body.classList.toggle('light-theme');
+  document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
 });
 
 // Load saved theme
-if (localStorage.getItem('theme') === 'dark') {
-  document.body.classList.add('dark');
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light-theme');
+  document.getElementById('themeToggle').textContent = '☀️';
 }
