@@ -116,6 +116,10 @@ document.getElementById('batch-compare-btn').addEventListener('click', async () 
   
   try {
     const resp = await fetch('/compare-batch', { method: 'POST', body: formData });
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`Server error (${resp.status}): ${text.slice(0, 200)}`);
+    }
     const data = await resp.json();
     
     if (data.success) {

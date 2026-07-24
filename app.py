@@ -177,7 +177,12 @@ def not_found(e):
 
 @app.errorhandler(413)
 def too_large(e):
-    return jsonify({"success": False, "error": "File too large. Maximum is 16MB."}), 413
+    return jsonify({"success": False, "error": "File too large. Maximum upload is 500MB."}), 413
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"success": False, "error": "Server error processing images. Try smaller files or fewer images."}), 500
 
 
 if __name__ == "__main__":

@@ -183,7 +183,17 @@
     document.addEventListener('DOMContentLoaded', () => {
       const stored = sessionStorage.getItem('batchResults');
       if (stored) {
-        results = JSON.parse(stored);
+        try {
+          results = JSON.parse(stored);
+          if (!Array.isArray(results) || results.length === 0) throw new Error('No results');
+        } catch (e) {
+          sessionStorage.removeItem('batchResults');
+          document.getElementById('loading-results').hidden = true;
+          document.getElementById('no-results').querySelector('p').textContent = 
+            'Results data was corrupted. Please go back and compare again.';
+          document.getElementById('no-results').hidden = false;
+          return;
+        }
         document.getElementById('result-count').textContent = results.length;
         document.getElementById('results-summary').hidden = false;
         document.getElementById('loading-results').hidden = true;
