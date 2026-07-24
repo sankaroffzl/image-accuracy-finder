@@ -89,7 +89,8 @@ def compare_batch():
             candidate_paths.append(path)
             orig_filenames[path] = cf.filename  # Preserve original filename
 
-        results = batch_compare(ref_path, candidate_paths)
+        batch_result = batch_compare(ref_path, candidate_paths)
+        results = batch_result["results"]
 
         # Replace UUID filenames with original names
         for result in results:
@@ -105,7 +106,7 @@ def compare_batch():
             else:
                 result["thumbnail"] = None
 
-        return jsonify(success=True, count=len(results), results=results)
+        return jsonify(success=True, count=len(results), total=batch_result["total"], failed=batch_result["failed"], results=results)
 
     except Exception as e:
         return jsonify(success=False, error=str(e)), 500

@@ -140,23 +140,30 @@ def compare_images(image_a_path: str, image_b_path: str) -> dict:
         }
 
 
-def batch_compare(ref_path: str, candidate_paths: list[str]) -> list[dict]:
+def batch_compare(ref_path: str, candidate_paths: list[str]) -> dict:
     """Compare multiple candidates against one reference image.
-
+    
     Args:
         ref_path: Path to reference image
         candidate_paths: List of paths to candidate images
-
+    
     Returns:
-        List of result dicts sorted by overall score descending,
-        each containing all compare_images fields plus 'filename'
+        Dict with:
+          - results: list of result dicts sorted by overall score descending
+          - total: total number of candidates attempted
+          - failed: number of candidates that failed processing
+        Each result dict contains all compare_images fields plus 'filename' and '_path'.
     """
     results = []
+    failed = 0
     for path in candidate_paths:
         result = compare_images(ref_path, path)
+        if not result.get("success", False):
+            failed += 1
+            continue  # Skip failed comparisons
         result["filename"] = os.path.basename(path)
         result["_path"] = path
         results.append(result)
 
-    results.sort(key=lambda r: r["overall"], reverse=True)
-    return results
+    results.sort(key=lambda r: r.get("overall", 0), reverse=True)
+    return {"results": results, "total": len(candidate_paths), "failed": failed}

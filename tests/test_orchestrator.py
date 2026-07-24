@@ -79,10 +79,12 @@ def test_batch_compare_returns_sorted_results():
             p = os.path.join(tmp, f"c{val}.png")
             cv2.imwrite(p, cv2.cvtColor(_create_test_array(val), cv2.COLOR_RGB2BGR))
             candidate_paths.append(p)
-        results = batch_compare(ref_path, candidate_paths)
-        assert len(results) == 3
-        for i in range(len(results) - 1):
-            assert results[i]["overall"] >= results[i + 1]["overall"]
+        out = batch_compare(ref_path, candidate_paths)
+        assert len(out["results"]) == 3
+        assert out["total"] == 3
+        assert out["failed"] == 0
+        for i in range(len(out["results"]) - 1):
+            assert out["results"][i]["overall"] >= out["results"][i + 1]["overall"]
 
 
 def test_batch_compare_single_candidate():
@@ -91,9 +93,10 @@ def test_batch_compare_single_candidate():
         cv2.imwrite(ref_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
         cand_path = os.path.join(tmp, "cand.png")
         cv2.imwrite(cand_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
-        results = batch_compare(ref_path, [cand_path])
-        assert len(results) == 1
-        assert "filename" in results[0]
+        out = batch_compare(ref_path, [cand_path])
+        assert len(out["results"]) == 1
+        assert out["total"] == 1
+        assert "filename" in out["results"][0]
 
 
 def test_batch_compare_adds_filename():
@@ -102,5 +105,22 @@ def test_batch_compare_adds_filename():
         cv2.imwrite(ref_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
         cand_path = os.path.join(tmp, "candidate.jpg")
         cv2.imwrite(cand_path, cv2.cvtColor(_create_test_array(100), cv2.COLOR_RGB2BGR))
-        results = batch_compare(ref_path, [cand_path])
-        assert results[0]["filename"] == "candidate.jpg"
+        out = batch_compare(ref_path, [cand_path])
+        assert out["results"][0]["filename"] == "candidate.jpg"
+
+
+def test_batch_compare_handles_failures_gracefully():
+    """Failed comparisons should be skipped, not crash the batch."""
+    with tempfile.TemporaryDirectory() as tmp:
+        ref_path = os.path.join(tmp, "ref.png")
+        cv2.imwrite(ref_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
+        good_path = os.path.join(tmp, "good.png")
+        cv2.imwrite(good_path, cv2.cvtColor(_create_test_array(200), cv2.COLOR_RGB2BGR))
+        bad_path = os.path.join(tmp, "bad.txt")
+        with open(bad_path, "w") as f:
+            f.write("not an image")
+        out = batch_compare(ref_path, [good_path, bad_path])
+        assert out["total"] == 2
+        assert out["failed"] == 1
+        assert len(out["results"]) == 1
+        assert out["results"][0]["filename"] == "good.png"

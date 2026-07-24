@@ -103,6 +103,8 @@ class TestBatchCompare:
         json_data = resp.get_json()
         assert json_data['success'] is True
         assert json_data['count'] == 2
+        assert json_data['total'] == 2
+        assert json_data['failed'] == 0
         assert len(json_data['results']) == 2
 
     def test_batch_compare_missing_reference(self, client):
