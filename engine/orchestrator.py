@@ -3,6 +3,7 @@
 import os
 import cv2
 import numpy as np
+from PIL import Image
 from engine.comparator import compute_ssim
 from engine.feature_matcher import compute_orb_match
 from engine.histogram import compute_histogram_similarity
@@ -20,15 +21,24 @@ MAX_IMAGE_DIM = (800, 800)
 
 
 def _load_and_preprocess(image_path: str) -> np.ndarray:
-    """Load image with OpenCV, resize to max dims, return RGB array."""
+    """Load image safely using PIL, resize to max dims, return uint8 RGB array.
+    
+    Uses PIL for loading because OpenCV's imread can segfault on corrupted
+    or unusual image files, killing the entire server process.
+    """
     if not os.path.exists(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
 
-    img = cv2.imread(image_path)
-    if img is None:
-        raise ValueError(f"Could not decode image: {image_path}")
+    # PIL is crash-safe — it won't segfault on bad images
+    try:
+        pil_img = Image.open(image_path)
+        pil_img.verify()  # Quick check without decoding pixels
+        pil_img = Image.open(image_path)  # Re-open after verify
+        pil_img = pil_img.convert("RGB")  # Safe: RGBA/CMYK/P → RGB
+    except Exception as e:
+        raise ValueError(f"Cannot decode image {os.path.basename(image_path)}: {e}")
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = np.array(pil_img, dtype=np.uint8)
 
     # Resize if larger than MAX_IMAGE_DIM while maintaining aspect ratio
     h, w = img.shape[:2]
@@ -71,11 +81,27 @@ def compare_images(image_a_path: str, image_b_path: str) -> dict:
         gray_a = cv2.cvtColor(img_a, cv2.COLOR_RGB2GRAY)
         gray_b = cv2.cvtColor(img_b, cv2.COLOR_RGB2GRAY)
 
-        # Run all algorithms
-        ssim_score = compute_ssim(gray_a, gray_b)
-        orb_score = compute_orb_match(gray_a, gray_b)
-        hist_score = compute_histogram_similarity(img_a, img_b)
-        phash_score = compute_phash_similarity(img_a, img_b)
+        # Run all algorithms (each wrapped to isolate crashes)
+        ssim_score = 0.0
+        orb_score = 0.0
+        hist_score = 0.0
+        phash_score = 0.0
+        try:
+            ssim_score = compute_ssim(gray_a, gray_b)
+        except Exception:
+            pass  # SSIM failed, continue with other algorithms
+        try:
+            orb_score = compute_orb_match(gray_a, gray_b)
+        except Exception:
+            pass  # ORB failed, continue
+        try:
+            hist_score = compute_histogram_similarity(img_a, img_b)
+        except Exception:
+            pass  # Histogram failed, continue
+        try:
+            phash_score = compute_phash_similarity(img_a, img_b)
+        except Exception:
+            pass  # pHash failed, continue
 
         # Compute weighted overall score (convert to percentage)
         overall = (

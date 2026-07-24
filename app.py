@@ -1,9 +1,12 @@
 """Flask application for Image Accuracy Finder."""
 
 import os
+import io
 import uuid
 import base64
 import cv2
+import numpy as np
+from PIL import Image
 from flask import Flask, render_template, request, jsonify, abort
 from engine.orchestrator import compare_images, batch_compare
 
@@ -26,6 +29,22 @@ def _allowed_file(filename: str) -> bool:
 def _get_ext(filename: str) -> str | None:
     parts = filename.rsplit(".", 1)
     return parts[1].lower() if len(parts) == 2 else None
+
+
+def _generate_thumbnail(image_path: str, size: int = 48) -> str | None:
+    """Generate a base64 thumbnail from an image file using PIL (crash-safe)."""
+    try:
+        pil_img = Image.open(image_path)
+        pil_img.thumbnail((size, size), Image.Resampling.LANCZOS)
+        # Convert to RGB (in case of RGBA/CMYK)
+        if pil_img.mode != "RGB":
+            pil_img = pil_img.convert("RGB")
+        buf = io.BytesIO()
+        pil_img.save(buf, format="JPEG", quality=60)
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return f"data:image/jpeg;base64,{b64}"
+    except Exception:
+        return None
 
 
 @app.route("/")
@@ -78,21 +97,11 @@ def compare_batch():
             if path and path in orig_filenames:
                 result["filename"] = orig_filenames[path]
 
-        # Generate base64 thumbnails for each candidate
+        # Generate base64 thumbnails for each candidate (PIL-based, crash-safe)
         for result in results:
             path = result.pop("_path", None)
             if path:
-                try:
-                    img = cv2.imread(path)
-                    if img is not None:
-                        thumb = cv2.resize(img, (48, 48))
-                        _, buf = cv2.imencode(".jpg", thumb, [cv2.IMWRITE_JPEG_QUALITY, 60])
-                        b64 = base64.b64encode(buf).decode("utf-8")
-                        result["thumbnail"] = f"data:image/jpeg;base64,{b64}"
-                    else:
-                        result["thumbnail"] = None
-                except Exception:
-                    result["thumbnail"] = None
+                result["thumbnail"] = _generate_thumbnail(path)
             else:
                 result["thumbnail"] = None
 
