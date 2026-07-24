@@ -76,53 +76,57 @@ def compare_batch():
     os.makedirs(batch_dir, exist_ok=True)
 
     try:
-        ref_ext = _get_ext(ref_file.filename)
-        ref_path = os.path.join(batch_dir, f"ref_{uuid.uuid4().hex}{ref_ext}")
-        ref_file.save(ref_path)
+        try:
+            ref_ext = _get_ext(ref_file.filename)
+            ref_path = os.path.join(batch_dir, f"ref_{uuid.uuid4().hex}{ref_ext}")
+            ref_file.save(ref_path)
 
-        candidate_paths = []
-        orig_filenames = {}
-        for cf in valid_candidates:
-            ext = _get_ext(cf.filename)
-            path = os.path.join(batch_dir, f"cand_{uuid.uuid4().hex}{ext}")
-            cf.save(path)
-            candidate_paths.append(path)
-            orig_filenames[path] = cf.filename  # Preserve original filename
+            candidate_paths = []
+            orig_filenames = {}
+            for cf in valid_candidates:
+                ext = _get_ext(cf.filename)
+                path = os.path.join(batch_dir, f"cand_{uuid.uuid4().hex}{ext}")
+                cf.save(path)
+                candidate_paths.append(path)
+                orig_filenames[path] = cf.filename  # Preserve original filename
 
-        batch_result = batch_compare(ref_path, candidate_paths)
-        results = batch_result["results"]
+            batch_result = batch_compare(ref_path, candidate_paths)
+            results = batch_result["results"]
 
-        # Flatten algorithm scores from details.* to top level for frontend
-        for result in results:
-            if result.get("details"):
-                result["ssim"] = round(result["details"]["ssim"] * 100, 1)
-                result["orb"] = round(result["details"]["orb"] * 100, 1)
-                result["histogram"] = round(result["details"]["histogram"] * 100, 1)
-                result["phash"] = round(result["details"]["phash"] * 100, 1)
+            # Flatten algorithm scores from details.* to top level for frontend
+            for result in results:
+                if result.get("details"):
+                    result["ssim"] = round(result["details"]["ssim"] * 100, 1)
+                    result["orb"] = round(result["details"]["orb"] * 100, 1)
+                    result["histogram"] = round(result["details"]["histogram"] * 100, 1)
+                    result["phash"] = round(result["details"]["phash"] * 100, 1)
 
-        # Replace UUID filenames with original names
-        for result in results:
-            path = result.get("_path")
-            if path and path in orig_filenames:
-                result["filename"] = orig_filenames[path]
+            # Replace UUID filenames with original names
+            for result in results:
+                path = result.get("_path")
+                if path and path in orig_filenames:
+                    result["filename"] = orig_filenames[path]
 
-        # Generate base64 thumbnails for each candidate (PIL-based, crash-safe)
-        for result in results:
-            path = result.pop("_path", None)
-            if path:
-                result["thumbnail"] = _generate_thumbnail(path)
-            else:
-                result["thumbnail"] = None
+            # Generate base64 thumbnails for each candidate (PIL-based, crash-safe)
+            for result in results:
+                path = result.pop("_path", None)
+                if path:
+                    result["thumbnail"] = _generate_thumbnail(path)
+                else:
+                    result["thumbnail"] = None
 
-        return jsonify(success=True, count=len(results), total=batch_result["total"], failed=batch_result["failed"], results=results)
+            return jsonify(success=True, count=len(results), total=batch_result["total"], failed=batch_result["failed"], results=results)
 
-    except Exception as e:
-        return jsonify(success=False, error=str(e)), 500
-
+        except Exception as e:
+            return jsonify(success=False, error=str(e)), 500
     finally:
-        if os.path.exists(batch_dir):
-            import shutil
-            shutil.rmtree(batch_dir, ignore_errors=True)
+        # Cleanup: wrapped in try/except so it can NEVER crash the response
+        try:
+            if os.path.exists(batch_dir):
+                import shutil
+                shutil.rmtree(batch_dir, ignore_errors=True)
+        except Exception:
+            pass  # Cleanup errors must never break the response
 
 
 @app.route("/compare", methods=["POST"])
