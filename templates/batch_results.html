@@ -13,22 +13,61 @@
         --color-primary-dark: #1E40AF;
       }
     </style>
+    <style>
+      .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin .8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .breakdown { display: none; }
+      .breakdown.visible { display: table-row; }
+      .breakdown-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+      .breakdown-item { text-align: center; }
+      .breakdown-item .label { font-size: .75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+      .breakdown-item .value { font-size: 1.1rem; font-weight: 700; }
+      .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; font-weight: 700; font-size: .85rem; }
+      .rank-1 { background: linear-gradient(135deg,#fbbf24,#f59e0b); color: #1e1b4b; }
+      .rank-2 { background: linear-gradient(135deg,#e2e8f0,#cbd5e1); color: #1e1b4b; }
+      .rank-3 { background: linear-gradient(135deg,#d97706,#b45309); color: #fff; }
+      .rank-4 { background: #e0e7ff; color: #3730a3; }
+      .rank-other { background: #f1f5f9; color: #94a3b8; }
+      .score-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; min-width: 120px; }
+      .score-fill { height: 100%; border-radius: 4px; transition: width .8s ease; }
+      .thumbnail { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #f1f5f9; }
+      .pagination button { padding: 6px 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; color: #475569; font-size: .875rem; cursor: pointer; transition: all .15s ease; }
+      .pagination button:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+      .pagination button.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+      .pagination button:disabled { opacity: .4; cursor: not-allowed; }
+      .btn { display: inline-flex; align-items: center; gap: 6px; }
+      .theme-toggle { background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 8px; border-radius: 8px; transition: background .15s ease; position: fixed; top: 16px; right: 16px; z-index: 50; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+      .theme-toggle:hover { background: #f1f5f9; }
+      .details-btn { padding: 4px 12px; font-size: .8rem; border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; color: #2563eb; cursor: pointer; transition: all .15s ease; }
+      .details-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+      .top10-label { display: inline-block; margin-left: 8px; padding: 1px 8px; font-size: .7rem; font-weight: 600; color: #92400e; background: #fef3c7; border-radius: 4px; }
+      .action-btn { padding: 10px 20px; border-radius: 8px; font-weight: 500; font-size: .875rem; cursor: pointer; transition: all .15s ease; border: none; }
+      .action-btn.primary { background: #2563eb; color: #fff; }
+      .action-btn.primary:hover { background: #1d4ed8; }
+      .action-btn.secondary { background: #fff; color: #475569; border: 1px solid #e2e8f0; }
+      .action-btn.secondary:hover { background: #f1f5f9; }
+      .row-top-10 { background: #fefce8; }
+      .glass { padding: 40px; text-align: center; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; }
+      .loading-results { padding: 60px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; color: #64748b; }
+      body.light-theme { background: #fff !important; }
+      body.light-theme .batch-header { border-color: #e2e8f0; }
+    </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
+<body class="bg-slate-50 font-sans antialiased">
   <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
-  <div class="container">
-    <div class="batch-header">
-      <h1>📊 Batch Results</h1>
-      <div class="header-actions">
-        <a href="/" class="btn">⬅ Back</a>
+  <div class="container max-w-6xl mx-auto px-4 py-10">
+    <div class="batch-header flex justify-between items-center mb-8 p-6 bg-white rounded-xl shadow-sm border border-slate-200">
+      <h1 class="text-2xl font-bold text-slate-900">📊 Batch Results</h1>
+      <div class="header-actions flex gap-3 items-center">
+        <a href="/" class="btn px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">⬅ Back</a>
       </div>
     </div>
     
-    <div id="results-summary" hidden>
-      <p>🏆 <span id="result-count"></span> participants ranked by accuracy</p>
-      <div class="action-bar">
-        <button class="action-btn" onclick="exportCSV()">📥 Export CSV</button>
+    <div id="results-summary" class="p-6 mb-8 bg-white rounded-xl shadow-sm border border-slate-200" hidden>
+      <p class="text-slate-700 font-medium mb-4">🏆 <span id="result-count"></span> participants ranked by accuracy</p>
+      <div class="action-bar flex gap-3">
+        <button class="action-btn primary" onclick="exportCSV()">📥 Export CSV</button>
         <button class="action-btn secondary" onclick="newRound()">🔄 New Round</button>
       </div>
     </div>
@@ -39,23 +78,23 @@
     </div>
     
     <div id="no-results" class="glass" hidden>
-      <p>No results found. <a href="/">Upload images</a> to compare.</p>
+      <p class="text-slate-500">No results found. <a href="/" class="text-blue-600 hover:text-blue-700 underline">Upload images</a> to compare.</p>
     </div>
     
-    <div id="results-content" class="results-table-wrapper" hidden>
-      <table class="results-table">
+    <div id="results-content" class="results-table-wrapper bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" hidden>
+      <table class="results-table w-full">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>Image</th>
-            <th>Filename</th>
-            <th>Similarity</th>
-            <th></th>
+          <tr class="bg-slate-50 text-left">
+            <th class="px-5 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">#</th>
+            <th class="px-5 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Image</th>
+            <th class="px-5 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Filename</th>
+            <th class="px-5 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Similarity</th>
+            <th class="px-5 py-4"></th>
           </tr>
         </thead>
-        <tbody id="results-body"></tbody>
+        <tbody id="results-body" class="divide-y divide-slate-100"></tbody>
       </table>
-      <div class="pagination" id="pagination"></div>
+      <div class="pagination flex justify-center gap-2 py-5 border-t border-slate-200" id="pagination"></div>
     </div>
   </div>
   
