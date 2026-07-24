@@ -25,31 +25,53 @@
         <div class="error-banner fade-in">{{ error }}</div>
         {% endif %}
 
-        <form id="compareForm" enctype="multipart/form-data">
-            <div class="upload-grid">
-                <!-- Image A -->
-                <div class="upload-zone" id="zoneA">
-                    <div class="upload-icon">🖼️</div>
-                    <h3>Original Image</h3>
-                    <p>Drop image A here or click to browse</p>
-                    <span class="upload-label">PNG, JPG, WEBP (max 16MB)</span>
-                    <input type="file" id="imageA" name="image_a" accept="image/png,image/jpeg,image/webp">
+        <div class="upload-section">
+          <div class="dropzone-row">
+            <!-- Reference dropzone -->
+            <div class="dropzone-wrapper">
+              <h3>Reference Image</h3>
+              <p class="dropzone-hint">The image to match against</p>
+              <div class="dropzone" id="ref-dropzone">
+                <div class="dropzone-content">
+                  <span class="dropzone-icon">📷</span>
+                  <p>Drag & drop reference image here</p>
+                  <p class="small">or click to browse</p>
+                  <input type="file" id="ref-input" accept="image/*" hidden>
                 </div>
-
-                <!-- Image B -->
-                <div class="upload-zone" id="zoneB">
-                    <div class="upload-icon">🖼️</div>
-                    <h3>Comparison Image</h3>
-                    <p>Drop image B here or click to browse</p>
-                    <span class="upload-label">PNG, JPG, WEBP (max 16MB)</span>
-                    <input type="file" id="imageB" name="image_b" accept="image/png,image/jpeg,image/webp">
+                <div class="preview" id="ref-preview" hidden>
+                  <img id="ref-img" alt="Reference preview">
+                  <button class="remove-btn" id="ref-remove">✕</button>
                 </div>
+              </div>
             </div>
-
-            <button type="submit" class="btn-compare" id="btnCompare" disabled>
-                ✨ Find Accuracy
-            </button>
-        </form>
+            
+            <!-- Candidates dropzone -->
+            <div class="dropzone-wrapper">
+              <h3>Candidate Images</h3>
+              <p class="dropzone-hint">Images to compare against reference</p>
+              <div class="dropzone" id="cand-dropzone">
+                <div class="dropzone-content">
+                  <span class="dropzone-icon">📁</span>
+                  <p>Drag & drop candidate images here</p>
+                  <p class="small">or click to browse (select multiple)</p>
+                  <input type="file" id="cand-input" accept="image/*" multiple hidden>
+                </div>
+                <div class="file-list" id="cand-list" hidden>
+                  <p class="file-count"><span id="cand-count">0</span> images selected</p>
+                  <button class="remove-btn" id="cand-clear">Clear all</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button class="compare-btn" id="batch-compare-btn" disabled>
+            🚀 Compare All
+          </button>
+          <div id="loading" hidden>
+            <div class="spinner"></div>
+            <p id="loading-text">Comparing images...</p>
+          </div>
+        </div>
     </div>
 
     <footer class="footer">

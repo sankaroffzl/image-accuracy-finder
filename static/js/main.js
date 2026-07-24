@@ -1,113 +1,123 @@
-// === DOM References ===
-const form = document.getElementById('compareForm');
-const btnCompare = document.getElementById('btnCompare');
-const zoneA = document.getElementById('zoneA');
-const zoneB = document.getElementById('zoneB');
-const inputA = document.getElementById('imageA');
-const inputB = document.getElementById('imageB');
-const loadingOverlay = document.getElementById('loadingOverlay');
-const themeToggle = document.getElementById('themeToggle');
+// Reference dropzone
+const refDropzone = document.getElementById('ref-dropzone');
+const refInput = document.getElementById('ref-input');
+const refPreview = document.getElementById('ref-preview');
+const refImg = document.getElementById('ref-img');
+const refRemove = document.getElementById('ref-remove');
 
-// === Theme Toggle ===
-let isDark = true;
-themeToggle.addEventListener('click', () => {
-    isDark = !isDark;
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    document.body.classList.toggle('light-theme', !isDark);
-    themeToggle.textContent = isDark ? '🌙' : '☀️';
+let refFile = null;
+let candFiles = [];
+
+// Reference: click to browse
+refDropzone.addEventListener('click', () => refInput.click());
+refInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleRefFile(e.target.files[0]);
 });
 
-// === Drag & Drop + File Selection ===
-function setupUploadZone(zone, input) {
-    // Click to upload
-    zone.addEventListener('click', () => input.click());
+// Reference: drag & drop
+refDropzone.addEventListener('dragover', (e) => { e.preventDefault(); refDropzone.classList.add('dragover'); });
+refDropzone.addEventListener('dragleave', () => refDropzone.classList.remove('dragover'));
+refDropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  refDropzone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) handleRefFile(e.dataTransfer.files[0]);
+});
 
-    input.addEventListener('change', () => {
-        if (input.files.length > 0) {
-            previewImage(zone, input.files[0]);
-        }
-        updateButtonState();
-    });
-
-    // Drag & drop
-    zone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        zone.classList.add('dragover');
-    });
-
-    zone.addEventListener('dragleave', () => {
-        zone.classList.remove('dragover');
-    });
-
-    zone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        zone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) {
-            const file = e.dataTransfer.files[0];
-            const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
-            if (!validTypes.includes(file.type)) {
-                alert('Please upload a PNG, JPG, or WEBP image.');
-                return;
-            }
-            if (file.size > 16 * 1024 * 1024) {
-                alert('File is too large. Maximum is 16MB.');
-                return;
-            }
-            input.files = e.dataTransfer.files;
-            previewImage(zone, file);
-            updateButtonState();
-        }
-    });
+function handleRefFile(file) {
+  refFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    refImg.src = e.target.result;
+    refPreview.hidden = false;
+    refDropzone.querySelector('.dropzone-content').hidden = true;
+  };
+  reader.readAsDataURL(file);
+  updateCompareBtn();
 }
 
-function previewImage(zone, file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        zone.classList.add('has-image');
-        zone.innerHTML = `
-            <img src="${e.target.result}" class="upload-preview" alt="Preview">
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">${file.name}</p>
-        `;
-    };
-    reader.readAsDataURL(file);
+refRemove.addEventListener('click', (e) => {
+  e.stopPropagation();
+  refFile = null;
+  refPreview.hidden = true;
+  refDropzone.querySelector('.dropzone-content').hidden = false;
+  refInput.value = '';
+  updateCompareBtn();
+});
+
+// Candidates dropzone
+const candDropzone = document.getElementById('cand-dropzone');
+const candInput = document.getElementById('cand-input');
+const candList = document.getElementById('cand-list');
+const candCount = document.getElementById('cand-count');
+const candClear = document.getElementById('cand-clear');
+
+candDropzone.addEventListener('click', () => candInput.click());
+candInput.addEventListener('change', (e) => {
+  if (e.target.files.length) handleCandFiles(e.target.files);
+});
+
+candDropzone.addEventListener('dragover', (e) => { e.preventDefault(); candDropzone.classList.add('dragover'); });
+candDropzone.addEventListener('dragleave', () => candDropzone.classList.remove('dragover'));
+candDropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  candDropzone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleCandFiles(e.dataTransfer.files);
+});
+
+function handleCandFiles(files) {
+  candFiles = [...candFiles, ...Array.from(files)];
+  candCount.textContent = candFiles.length;
+  candList.hidden = false;
+  updateCompareBtn();
 }
 
-function updateButtonState() {
-    const hasBoth = inputA.files.length > 0 && inputB.files.length > 0;
-    btnCompare.classList.toggle('active', hasBoth);
-    btnCompare.disabled = !hasBoth;
+candClear.addEventListener('click', (e) => {
+  e.stopPropagation();
+  candFiles = [];
+  candCount.textContent = '0';
+  candList.hidden = true;
+  candInput.value = '';
+  updateCompareBtn();
+});
+
+function updateCompareBtn() {
+  document.getElementById('batch-compare-btn').disabled = !(refFile && candFiles.length > 0);
 }
 
-// Initialize upload zones
-setupUploadZone(zoneA, inputA);
-setupUploadZone(zoneB, inputB);
-
-// === Form Submission ===
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const formData = new FormData();
-    formData.append('image_a', inputA.files[0]);
-    formData.append('image_b', inputB.files[0]);
-
-    loadingOverlay.classList.add('active');
-
-    try {
-        const response = await fetch('/compare', {
-            method: 'POST',
-            body: formData,
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            window.location.href = `/results/${data.id}`;
-        } else {
-            alert('Error: ' + (data.error || 'Unknown error occurred'));
-            loadingOverlay.classList.remove('active');
-        }
-    } catch (err) {
-        alert('Network error. Please try again.');
-        loadingOverlay.classList.remove('active');
+// Submit batch comparison
+document.getElementById('batch-compare-btn').addEventListener('click', async () => {
+  const formData = new FormData();
+  formData.append('reference', refFile);
+  candFiles.forEach(f => formData.append('candidates', f));
+  
+  document.getElementById('loading').hidden = false;
+  document.getElementById('batch-compare-btn').disabled = true;
+  
+  try {
+    const resp = await fetch('/compare-batch', { method: 'POST', body: formData });
+    const data = await resp.json();
+    
+    if (data.success) {
+      // Store results and redirect
+      sessionStorage.setItem('batchResults', JSON.stringify(data.results));
+      window.location.href = '/batch-results';
+    } else {
+      alert('Error: ' + data.error);
     }
+  } catch (err) {
+    alert('Error: ' + err.message);
+  } finally {
+    document.getElementById('loading').hidden = true;
+  }
 });
+
+// Theme toggle
+document.getElementById('themeToggle')?.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+});
+
+// Load saved theme
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark');
+}
