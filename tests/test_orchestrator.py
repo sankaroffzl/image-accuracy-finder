@@ -6,8 +6,12 @@ import pytest
 from engine.orchestrator import compare_images
 
 
-def _create_test_image(path, color=128):
-    arr = np.ones((100, 100, 3), dtype=np.uint8) * color
+def _create_test_image(path, color=None):
+    """Create a test image. If color is None, uses random noise (has features)."""
+    if color is None:
+        arr = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
+    else:
+        arr = np.ones((100, 100, 3), dtype=np.uint8) * color
     img = Image.fromarray(arr)
     img.save(path)
 
@@ -16,8 +20,11 @@ def test_identical_images_high_score():
     with tempfile.TemporaryDirectory() as tmp:
         path_a = os.path.join(tmp, "a.png")
         path_b = os.path.join(tmp, "b.png")
-        _create_test_image(path_a, 200)
-        _create_test_image(path_b, 200)
+        # Use random noise images with detectable features
+        np.random.seed(42)
+        _create_test_image(path_a)
+        np.random.seed(42)
+        _create_test_image(path_b)
         result = compare_images(path_a, path_b)
         assert result["success"] is True
         assert 0.0 <= result["overall"] <= 100.0

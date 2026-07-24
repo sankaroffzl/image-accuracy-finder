@@ -78,26 +78,11 @@ def compare_images(image_a_path: str, image_b_path: str) -> dict:
         phash_score = compute_phash_similarity(img_a, img_b)
 
         # Compute weighted overall score (convert to percentage)
-        # If ORB returns 0.0 but SSIM indicates near-identical images,
-        # ORB likely failed due to lack of features — redistribute its weight
-        if orb_score == 0.0 and ssim_score > 0.95:
-            remaining = {k: v for k, v in WEIGHTS.items() if k != "orb"}
-            total_remaining = sum(remaining.values())
-            orb_weight = 0.0
-            ssim_weight = WEIGHTS["ssim"] / total_remaining
-            hist_weight = WEIGHTS["histogram"] / total_remaining
-            phash_weight = WEIGHTS["phash"] / total_remaining
-        else:
-            ssim_weight = WEIGHTS["ssim"]
-            orb_weight = WEIGHTS["orb"]
-            hist_weight = WEIGHTS["histogram"]
-            phash_weight = WEIGHTS["phash"]
-
         overall = (
-            ssim_score * ssim_weight
-            + orb_score * orb_weight
-            + hist_score * hist_weight
-            + phash_score * phash_weight
+            ssim_score * WEIGHTS["ssim"]
+            + orb_score * WEIGHTS["orb"]
+            + hist_score * WEIGHTS["histogram"]
+            + phash_score * WEIGHTS["phash"]
         ) * 100.0
 
         overall = round(float(np.clip(overall, 0.0, 100.0)), 1)
