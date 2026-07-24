@@ -1,5 +1,7 @@
 import io
 import json
+import cv2
+import numpy as np
 import pytest
 from app import app
 
@@ -81,3 +83,46 @@ def test_results_page_returns_200(client):
     resp = client.get(f"/results/{result_id}")
     assert resp.status_code == 200
     assert b"<!DOCTYPE html>" in resp.data or b"<html" in resp.data
+
+
+class TestBatchCompare:
+    def setup_method(self):
+        self.ref = cv2.imencode('.jpg', np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8))[1].tobytes()
+        self.candidate = cv2.imencode('.jpg', np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8))[1].tobytes()
+
+    def test_batch_compare_success(self, client):
+        data = {
+            'reference': (io.BytesIO(self.ref), 'ref.jpg'),
+            'candidates': [
+                (io.BytesIO(self.candidate), 'cand1.jpg'),
+                (io.BytesIO(self.candidate), 'cand2.jpg'),
+            ]
+        }
+        resp = client.post('/compare-batch', data=data, content_type='multipart/form-data')
+        assert resp.status_code == 200
+        json_data = resp.get_json()
+        assert json_data['success'] is True
+        assert json_data['count'] == 2
+        assert len(json_data['results']) == 2
+
+    def test_batch_compare_missing_reference(self, client):
+        data = {
+            'candidates': [(io.BytesIO(self.candidate), 'cand1.jpg')]
+        }
+        resp = client.post('/compare-batch', data=data, content_type='multipart/form-data')
+        assert resp.status_code == 400
+
+    def test_batch_compare_no_candidates(self, client):
+        data = {
+            'reference': (io.BytesIO(self.ref), 'ref.jpg'),
+        }
+        resp = client.post('/compare-batch', data=data, content_type='multipart/form-data')
+        assert resp.status_code == 400
+
+    def test_batch_compare_invalid_file_type(self, client):
+        data = {
+            'reference': (io.BytesIO(self.ref), 'ref.jpg'),
+            'candidates': [(io.BytesIO(b'not an image'), 'bad.txt')]
+        }
+        resp = client.post('/compare-batch', data=data, content_type='multipart/form-data')
+        assert resp.status_code == 400

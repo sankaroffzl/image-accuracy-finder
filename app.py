@@ -3,7 +3,7 @@
 import os
 import uuid
 from flask import Flask, render_template, request, jsonify, abort
-from engine.orchestrator import compare_images
+from engine.orchestrator import compare_images, batch_compare
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(__file__), "uploads")
@@ -30,6 +30,53 @@ def _get_ext(filename: str) -> str | None:
 def index():
     """Render the upload page."""
     return render_template("index.html")
+
+
+@app.route("/compare-batch", methods=["POST"])
+def compare_batch():
+    """Compare multiple candidate images against a single reference."""
+    if "reference" not in request.files:
+        return jsonify(success=False, error="No reference image provided"), 400
+
+    if "candidates" not in request.files:
+        return jsonify(success=False, error="No candidate images provided"), 400
+
+    ref_file = request.files["reference"]
+    if ref_file.filename == "" or not _allowed_file(ref_file.filename):
+        return jsonify(success=False, error="Invalid reference file"), 400
+
+    candidate_files = request.files.getlist("candidates")
+    valid_candidates = [f for f in candidate_files if f.filename != "" and _allowed_file(f.filename)]
+
+    if not valid_candidates:
+        return jsonify(success=False, error="No valid candidate images provided"), 400
+
+    batch_dir = os.path.join(app.instance_path, "batch_uploads")
+    os.makedirs(batch_dir, exist_ok=True)
+
+    try:
+        ref_ext = _get_ext(ref_file.filename)
+        ref_path = os.path.join(batch_dir, f"ref_{uuid.uuid4().hex}{ref_ext}")
+        ref_file.save(ref_path)
+
+        candidate_paths = []
+        for cf in valid_candidates:
+            ext = _get_ext(cf.filename)
+            path = os.path.join(batch_dir, f"cand_{uuid.uuid4().hex}{ext}")
+            cf.save(path)
+            candidate_paths.append(path)
+
+        results = batch_compare(ref_path, candidate_paths)
+
+        return jsonify(success=True, count=len(results), results=results)
+
+    except Exception as e:
+        return jsonify(success=False, error=str(e)), 500
+
+    finally:
+        if os.path.exists(batch_dir):
+            import shutil
+            shutil.rmtree(batch_dir, ignore_errors=True)
 
 
 @app.route("/compare", methods=["POST"])
