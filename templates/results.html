@@ -16,82 +16,84 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen">
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
 
-    <div class="container">
-        <div class="results-header fade-in">
-            <a href="/" class="back-link">← Compare New Images</a>
-            <h1>Accuracy Results</h1>
+    <div class="max-w-3xl mx-auto px-4 py-10">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8 text-center">
+            <a href="/" class="inline-flex items-center gap-1 text-slate-500 hover:text-blue-600 transition-colors mb-4">← Compare New Images</a>
+            <h1 class="text-2xl font-bold text-slate-900">Accuracy Results</h1>
         </div>
 
-        <!-- Gauge -->
-        <div class="gauge-container fade-in">
-            <div class="gauge" id="gauge">
-                <svg viewBox="0 0 120 120">
-                    <circle class="gauge-bg" cx="60" cy="60" r="50"/>
-                    <circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="50"
-                            stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8 text-center">
+            <div class="gauge relative w-56 h-56 mx-auto" id="gauge">
+                <svg viewBox="0 0 120 120" class="transform -rotate-90">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+                    <circle id="gaugeFill" cx="60" cy="60" r="50" fill="none" stroke-width="8"
+                            stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition: stroke-dashoffset 1.5s ease-out, stroke 0.5s ease"/>
                 </svg>
-                <div class="gauge-text">
-                    <span class="gauge-percentage" id="gaugePercent">0%</span>
-                    <span class="gauge-label">Accuracy</span>
+                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                    <span class="text-4xl font-extrabold text-slate-900" id="gaugePercent">0%</span>
+                    <span class="text-sm text-slate-400">Accuracy</span>
                 </div>
             </div>
-            <div class="gauge-verdict verdict-{{ 'high' if result.overall >= 75 else 'moderate' if result.overall >= 50 else 'low' }}" id="verdict">
+            <div class="gauge-verdict text-xl font-bold {{ 'text-green-600' if result.overall >= 75 else 'text-yellow-600' if result.overall >= 50 else 'text-red-600' }}" id="verdict">
                 {{ 'High Match' if result.overall >= 75 else 'Moderate Match' if result.overall >= 50 else 'Low Match' }}
             </div>
         </div>
 
-        <!-- Details Breakdown -->
-        <div class="details-section fade-in">
-            <h2>Algorithm Breakdown</h2>
-            <table class="details-table">
-                <tr>
-                    <td class="metric-name">SSIM</td>
-                    <td class="metric-bar">
-                        <div class="bar-track">
-                            <div class="bar-fill {{ 'high' if result.details.ssim >= 0.75 else 'moderate' if result.details.ssim >= 0.50 else 'low' }}"
-                                 data-value="{{ result.details.ssim }}"></div>
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-8 max-w-xl mx-auto">
+            <h2 class="text-lg font-semibold text-slate-900 text-center mb-6">Algorithm Breakdown</h2>
+            <table class="w-full">
+                <tr class="border-b border-slate-100 last:border-0">
+                    <td class="py-3 pr-4 text-slate-600 font-medium">SSIM</td>
+                    <td class="py-3 pr-4 w-full">
+                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="bar-fill h-full rounded-full transition-all duration-1000 ease-out {{ 'bg-green-500' if result.details.ssim >= 0.75 else 'bg-yellow-500' if result.details.ssim >= 0.50 else 'bg-red-500' }}"
+                                 data-value="{{ result.details.ssim }}"
+                                 style="width:0%"></div>
                         </div>
                     </td>
-                    <td class="metric-value" id="ssimVal">{{ "%.1f"|format(result.details.ssim * 100) }}%</td>
+                    <td class="py-3 text-right font-semibold text-slate-700" id="ssimVal">{{ "%.1f"|format(result.details.ssim * 100) }}%</td>
                 </tr>
-                <tr>
-                    <td class="metric-name">Feature Match</td>
-                    <td class="metric-bar">
-                        <div class="bar-track">
-                            <div class="bar-fill {{ 'high' if result.details.orb >= 0.75 else 'moderate' if result.details.orb >= 0.50 else 'low' }}"
-                                 data-value="{{ result.details.orb }}"></div>
+                <tr class="border-b border-slate-100 last:border-0">
+                    <td class="py-3 pr-4 text-slate-600 font-medium">Feature Match</td>
+                    <td class="py-3 pr-4 w-full">
+                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="bar-fill h-full rounded-full transition-all duration-1000 ease-out {{ 'bg-green-500' if result.details.orb >= 0.75 else 'bg-yellow-500' if result.details.orb >= 0.50 else 'bg-red-500' }}"
+                                 data-value="{{ result.details.orb }}"
+                                 style="width:0%"></div>
                         </div>
                     </td>
-                    <td class="metric-value" id="orbVal">{{ "%.1f"|format(result.details.orb * 100) }}%</td>
+                    <td class="py-3 text-right font-semibold text-slate-700" id="orbVal">{{ "%.1f"|format(result.details.orb * 100) }}%</td>
                 </tr>
-                <tr>
-                    <td class="metric-name">Histogram</td>
-                    <td class="metric-bar">
-                        <div class="bar-track">
-                            <div class="bar-fill {{ 'high' if result.details.histogram >= 0.75 else 'moderate' if result.details.histogram >= 0.50 else 'low' }}"
-                                 data-value="{{ result.details.histogram }}"></div>
+                <tr class="border-b border-slate-100 last:border-0">
+                    <td class="py-3 pr-4 text-slate-600 font-medium">Histogram</td>
+                    <td class="py-3 pr-4 w-full">
+                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="bar-fill h-full rounded-full transition-all duration-1000 ease-out {{ 'bg-green-500' if result.details.histogram >= 0.75 else 'bg-yellow-500' if result.details.histogram >= 0.50 else 'bg-red-500' }}"
+                                 data-value="{{ result.details.histogram }}"
+                                 style="width:0%"></div>
                         </div>
                     </td>
-                    <td class="metric-value" id="histVal">{{ "%.1f"|format(result.details.histogram * 100) }}%</td>
+                    <td class="py-3 text-right font-semibold text-slate-700" id="histVal">{{ "%.1f"|format(result.details.histogram * 100) }}%</td>
                 </tr>
-                <tr>
-                    <td class="metric-name">pHash</td>
-                    <td class="metric-bar">
-                        <div class="bar-track">
-                            <div class="bar-fill {{ 'high' if result.details.phash >= 0.75 else 'moderate' if result.details.phash >= 0.50 else 'low' }}"
-                                 data-value="{{ result.details.phash }}"></div>
+                <tr class="border-b border-slate-100 last:border-0">
+                    <td class="py-3 pr-4 text-slate-600 font-medium">pHash</td>
+                    <td class="py-3 pr-4 w-full">
+                        <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="bar-fill h-full rounded-full transition-all duration-1000 ease-out {{ 'bg-green-500' if result.details.phash >= 0.75 else 'bg-yellow-500' if result.details.phash >= 0.50 else 'bg-red-500' }}"
+                                 data-value="{{ result.details.phash }}"
+                                 style="width:0%"></div>
                         </div>
                     </td>
-                    <td class="metric-value" id="phashVal">{{ "%.1f"|format(result.details.phash * 100) }}%</td>
+                    <td class="py-3 text-right font-semibold text-slate-700" id="phashVal">{{ "%.1f"|format(result.details.phash * 100) }}%</td>
                 </tr>
             </table>
         </div>
     </div>
 
-    <footer class="footer">
+    <footer class="text-center py-8 text-slate-400 text-sm border-t border-slate-200 mt-8 max-w-3xl mx-auto px-4">
         Made with ❤️ using Flask + OpenCV
     </footer>
 
