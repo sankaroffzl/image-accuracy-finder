@@ -62,13 +62,21 @@ def compare_batch():
         ref_file.save(ref_path)
 
         candidate_paths = []
+        orig_filenames = {}
         for cf in valid_candidates:
             ext = _get_ext(cf.filename)
             path = os.path.join(batch_dir, f"cand_{uuid.uuid4().hex}{ext}")
             cf.save(path)
             candidate_paths.append(path)
+            orig_filenames[path] = cf.filename  # Preserve original filename
 
         results = batch_compare(ref_path, candidate_paths)
+
+        # Replace UUID filenames with original names
+        for result in results:
+            path = result.get("_path")
+            if path and path in orig_filenames:
+                result["filename"] = orig_filenames[path]
 
         # Generate base64 thumbnails for each candidate
         for result in results:
