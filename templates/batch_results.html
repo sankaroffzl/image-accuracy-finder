@@ -7,14 +7,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
   <div class="container">
-    <header>
+    <div class="batch-header">
       <h1>📊 Batch Results</h1>
       <div class="header-actions">
         <a href="/" class="btn">⬅ Back</a>
-        <button id="theme-toggle">🌓</button>
       </div>
-    </header>
+    </div>
     
     <div id="results-summary" hidden>
       <p>Sorted by similarity — <span id="result-count"></span> images compared</p>
@@ -25,11 +25,11 @@
       <p>Loading results...</p>
     </div>
     
-    <div id="no-results" hidden>
+    <div id="no-results" class="glass" hidden>
       <p>No results found. <a href="/">Upload images</a> to compare.</p>
     </div>
     
-    <div id="results-content" hidden>
+    <div id="results-content" class="results-table-wrapper" hidden>
       <table class="results-table">
         <thead>
           <tr>
@@ -84,7 +84,7 @@
               <strong>${r.overall.toFixed(1)}%</strong>
             </div>
           </td>
-          <td><button onclick="toggleBreakdown(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:4px 8px;cursor:pointer;">Details</button></td>
+          <td><button class="details-btn" onclick="toggleBreakdown(${i})">Details</button></td>
         `;
         row.dataset.index = i;
         tbody.appendChild(row);
@@ -169,14 +169,15 @@
     });
     
     // Theme toggle
-    document.getElementById('theme-toggle').addEventListener('click', () => {
+    const themeBtn = document.getElementById('themeToggle');
+    themeBtn.addEventListener('click', () => {
       const isLight = document.body.classList.toggle('light-theme');
-      document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌓';
+      themeBtn.textContent = isLight ? '☀️' : '🌙';
       localStorage.setItem('theme', isLight ? 'light' : 'dark');
     });
     if (localStorage.getItem('theme') === 'light') {
       document.body.classList.add('light-theme');
-      document.getElementById('theme-toggle').textContent = '☀️';
+      themeBtn.textContent = '☀️';
     }
   </script>
 </body>
