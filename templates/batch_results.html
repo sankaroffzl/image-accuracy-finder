@@ -3,8 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Batch Results - Image Accuracy Finder</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<title>Batch Results - Image Accuracy Finder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: 'Inter', system-ui, sans-serif;
+        --color-primary: #2563EB;
+        --color-primary-dark: #1E40AF;
+      }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
   <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
